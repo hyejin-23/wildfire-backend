@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import os
 
 def calculate_farsite_probs(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -50,7 +51,9 @@ def load_correction_weights(csv_path: str) -> dict:
     input_data_farsite_Nan.csv에서 방향별 확산 확률 평균을 기반으로 역가중치 계산
     → 각 방향에 대한 정규화된 보정 가중치를 반환
     """
-    df = pd.read_csv(csv_path)
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    data_path = os.path.join(base_dir, '..', 'data', 'input_data_farsite_Nan.csv')
+    df = pd.read_csv(data_path)
 
     dir_cols = ['P_NW', 'P_N', 'P_NE', 'P_W', 'P_E', 'P_SW', 'P_S', 'P_SE']
     mean_probs = []

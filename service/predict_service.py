@@ -5,11 +5,21 @@ from service.weather_service import get_weather_data
 from service.prepare_input import prepare_ast_input
 from service.ai_service import send_to_ai_model
 import asyncio  #  추가
+import os  # 추가
+from service.farsite_service import (
+    calculate_farsite_probs,
+    apply_directional_correction,
+    prepare_ast_input,
+    load_correction_weights
+)
+from service.ai_service import send_to_ai_model
 
 def load_grids_within_radius(user_lat, user_lon, radius_km=15):
-    csv_path = "D:/py/korea_grids_0.01deg.csv"
-    df = pd.read_csv(csv_path)
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    DATA_DIR = os.path.join(BASE_DIR, '..', 'data')
+    csv_path = os.path.join(DATA_DIR, 'korea_grids_0.01deg.csv')
 
+    df = pd.read_csv(csv_path)
     filtered = []
 
     for _, row in df.iterrows():
@@ -22,58 +32,55 @@ def load_grids_within_radius(user_lat, user_lon, radius_km=15):
 
     return pd.DataFrame(filtered)
 
-# ✅ 비동기 날씨 붙이기
-async def append_weather_to_grids_async(grids_df):
+
+# ✅ 날씨 비동기 처리 함수
+async def append_weather_to_grids_async(grids_df: pd.DataFrame):
     tasks = [
         get_weather_data(row["center_lat"], row["center_lon"])
         for _, row in grids_df.iterrows()
     ]
     weather_data = await asyncio.gather(*tasks)
-
     weather_df = pd.DataFrame(weather_data)
     return pd.concat([grids_df.reset_index(drop=True), weather_df], axis=1)
 
-# ✅ 최종 예측 처리 함수도 async로!
+
+# ✅ 최종 예측 처리 함수 (실시간 전체 흐름)
 async def process_prediction(lat: float, lon: float):
-    print(f"사용자 입력 위치 → 위도: {lat}, 경도: {lon}")
+    print(f"사용자 입력 → 위도: {lat}, 경도: {lon}")
 
     try:
+        # 1️⃣ 반경 15km 이내 격자 추출
         grids_df = load_grids_within_radius(lat, lon)
-
         if grids_df.empty:
             return {"message": "반경 15km 이내에 격자가 없습니다."}
 
+        # 2️⃣ 지표 데이터 필터링
         grid_ids = grids_df['grid_id'].tolist()
         features_df = filter_non_weather_features(grid_ids)
 
-        # ✅ 비동기 날씨 붙이기
+        # 3️⃣ 날씨 데이터 비동기 붙이기
         features_with_weather = await append_weather_to_grids_async(features_df)
 
-        # ✅ 컬럼 순서 정리
-        desired_columns = [
-            "grid_id", "lat_min", "lat_max", "lon_min", "lon_max",
-            "center_lat", "center_lon",
-            "avg_fuelload_pertree_kg", "FFMC", "DMC", "DC", "NDVI", "smap_20250630_filled",
-            "temp_C", "humidity", "wind_speed", "wind_deg", "precip_mm",
-            "mean_slope", "spei_recent_avg"
-        ]
-        features_with_weather = features_with_weather[desired_columns]
+        # 4️⃣ 확산 확률 계산 → 보정
+        df_probs = calculate_farsite_probs(features_with_weather)
+        weights = load_correction_weights()  # 이미 내부에서 CSV 경로 포함됨
+        df_corrected = apply_directional_correction(df_probs, weights)
 
-        # ✅ JSON 생성 및 AI 예측 모델로 전송
-        final_json = prepare_ast_input(features_with_weather)
+        # 5️⃣ AI 모델 전송용 JSON 구성 및 전송
+        final_json = prepare_ast_input(df_corrected)
         response_code = send_to_ai_model(final_json)
 
         if response_code == 200:
-            print("AI 예측 서버 전송 완료!")
+            print("AI 예측 서버 전송 완료")
         else:
-            print("전송 실패")
+            print("예측 전송 실패")
 
-        # ✅ 사용자에게는 샘플만 반환
+        # 6️⃣ 사용자에게는 샘플만 반환
         return {
             "입력 위도": lat,
             "입력 경도": lon,
-            "격자 수": len(features_with_weather),
-            "지표 + 날씨 샘플": features_with_weather.head(2).to_dict(orient="records")
+            "격자 수": len(df_corrected),
+            "지표 + 날씨 샘플": df_corrected.head(2).to_dict(orient="records")
         }
 
     except Exception as e:
