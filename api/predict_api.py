@@ -8,4 +8,9 @@ router = APIRouter()
 async def predict_endpoint(req: PredictRequest = Body(...)):  # ✅ async로 변경
     return await predict_fire(req)  # ✅ await 사용
 
+@router.get("/")
+def root():
+    return {"message": "Wildfire backend is running"}
+
+
 
