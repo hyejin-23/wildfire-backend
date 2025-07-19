@@ -76,6 +76,9 @@ async def process_prediction(lat: float, lon: float):
         df_corrected = apply_directional_correction(df_probs, weights)
         print("✅ 확산 확률 계산 완료")
 
+        # ✅ 테스트용 격자 수 줄이기 (메모리 초과 방지)
+        df_corrected = df_corrected.head(5)
+
         # 5️⃣ AI 예측 전송
         print("📍 [STEP 5] AI 예측 JSON 구성 시작")
         final_json = prepare_ast_input(df_corrected)
