@@ -46,7 +46,7 @@ async def append_weather_to_grids_async(grids_df: pd.DataFrame):
 
 
 async def process_prediction(lat: float, lon: float):
-    print("🚀 [ENTRY] process_prediction() 진입")  # ✅ 디버깅용 진입 로그
+    print(f"🔥 process_prediction 시작: 위도={lat}, 경도={lon}")
 
     try:
         # 1️⃣ 반경 15km 이내 격자 추출
