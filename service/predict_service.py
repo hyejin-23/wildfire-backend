@@ -75,7 +75,7 @@ async def process_prediction(lat: float, lon: float):
         print("AI 예측 요청 JSON 구성 완료")
 
         try:
-            response_code = send_to_ai_model(final_json)
+            response_code = await send_to_ai_model(final_json)
             print(f"예측 서버 응답 코드: {response_code}")
         except Exception as send_err:
             print(f"AI 전송 중 예외 발생: {send_err}")
