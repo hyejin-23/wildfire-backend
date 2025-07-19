@@ -1,15 +1,16 @@
 import pandas as pd
+import traceback
+
+from service.ai_service import send_to_ai_model
 from util.geo_utils import haversine
 from repository.feature_repository import filter_non_weather_features
 from service.weather_service import get_weather_data
-from service.ai_service import send_to_ai_model
-import asyncio  #  추가
-import os  # 추가
+import asyncio
+import os
 from service.farsite_service import (
     calculate_farsite_probs,
     apply_directional_correction,
-    prepare_ast_input,
-    load_correction_weights
+    load_correction_weights, prepare_ast_input
 )
 
 def load_grids_within_radius(user_lat, user_lon, radius_km=15):
@@ -18,7 +19,7 @@ def load_grids_within_radius(user_lat, user_lon, radius_km=15):
     csv_path = os.path.join(DATA_DIR, 'korea_grids_0.01deg.csv')
 
     df = pd.read_csv(csv_path)
-    df = df.head(5)  # 🔥 메모리 초과 방지용 테스트 제한
+    df = df.head(5)  # 🔥 메모리 초과 방지용 테스트 제한 → # TODO: 배포 시 제거
     filtered = []
 
     for _, row in df.iterrows():
@@ -85,7 +86,6 @@ async def process_prediction(lat: float, lon: float):
             print(f"✅ 예측 응답 코드: {response_code}")
         except Exception as send_err:
             print(f"❌ AI 전송 중 예외 발생: {send_err}")
-            response_code = None
 
         return {
             "입력 위도": lat,
@@ -96,7 +96,6 @@ async def process_prediction(lat: float, lon: float):
 
     except Exception as e:
         print(f"❗ 전체 흐름 중 예외 발생: {e}")
-        import traceback
         traceback.print_exc()
         return {"error": str(e)}
 
