@@ -1,5 +1,6 @@
 import pandas as pd
 import traceback
+import numpy as np
 
 from service.ai_service import send_to_ai_model
 from util.geo_utils import haversine
@@ -80,19 +81,28 @@ async def process_prediction(lat: float, lon: float):
         final_json = prepare_ast_input(df_corrected)
         print("📦 전송 JSON 일부:", list(final_json[:1]))  # ✅ 전송 데이터 미리보기
 
+        # ✅ NaN → None 처리 및 numpy 타입 변환 (항상)
+        sample_data = df_corrected.head(2).replace({np.nan: None}).applymap(
+            lambda x: int(x) if isinstance(x, (np.int32, np.int64))
+            else float(x) if isinstance(x, (np.float32, np.float64))
+            else x
+        ).to_dict(orient="records")
+
         try:
             print("📡 AI 전송 시도 중...")
-            response_code = await send_to_ai_model(final_json)  # await 반드시 붙이기!
+            response_code = await send_to_ai_model(final_json)
             print(f"✅ 예측 응답 코드: {response_code}")
         except Exception as send_err:
             print(f"❌ AI 전송 중 예외 발생: {send_err}")
 
+        # 🟢 정상/예외 상관없이 결과 반환
         return {
             "입력 위도": lat,
             "입력 경도": lon,
             "격자 수": len(df_corrected),
-            "지표 + 날씨 샘플": df_corrected.head(2).to_dict(orient="records")
+            "지표 + 날씨 샘플": sample_data
         }
+
 
     except Exception as e:
         print(f"❗ 전체 흐름 중 예외 발생: {e}")
