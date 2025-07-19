@@ -2,6 +2,8 @@ import numpy as np
 import pandas as pd
 import os
 
+
+
 def calculate_farsite_probs(df: pd.DataFrame) -> pd.DataFrame:
     """
     격자별로 8방향(NW~SE)에 대한 확산 확률(P_dir)을 계산하여 DataFrame에 추가.
@@ -46,31 +48,33 @@ def calculate_farsite_probs(df: pd.DataFrame) -> pd.DataFrame:
 
     return pd.DataFrame(result_rows)
 
-def load_correction_weights(csv_path: str) -> dict:
+def load_correction_weights() -> dict:
     """
     input_data_farsite_Nan.csv에서 방향별 확산 확률 평균을 기반으로 역가중치 계산
     → 각 방향에 대한 정규화된 보정 가중치를 반환
     """
+    # 경로를 내부에서 직접 설정
     base_dir = os.path.dirname(os.path.abspath(__file__))
     data_path = os.path.join(base_dir, '..', 'data', 'input_data_farsite_Nan.csv')
+
+    # CSV 읽기
     df = pd.read_csv(data_path)
-    df = df.head(5)  # ✅ 테스트 중 Render 메모리 초과 방지용
+    df = df.head(5)  # ✅ Render 메모리 초과 방지 (테스트용)
 
+    # 방향별 확산 확률 컬럼
     dir_cols = ['P_NW', 'P_N', 'P_NE', 'P_W', 'P_E', 'P_SW', 'P_S', 'P_SE']
-    mean_probs = []
 
-    for col in dir_cols:
-        mean_val = df[col].mean(skipna=True)
-        mean_probs.append(mean_val)
+    # 평균 확률 계산
+    mean_probs = [df[col].mean(skipna=True) for col in dir_cols]
 
-    # 역비율 계산
+    # 역비율 가중치 계산 (0일 경우 0 처리)
     inv_weights = [1 / p if p != 0 else 0 for p in mean_probs]
 
     # 정규화 (최댓값 기준)
     max_weight = max(inv_weights)
     norm_weights = [w / max_weight for w in inv_weights]
 
-    # 결과를 딕셔너리로 반환
+    # 결과 반환
     return {dir_cols[i]: norm_weights[i] for i in range(8)}
 
 def apply_directional_correction(df_probs: pd.DataFrame, weights: dict) -> pd.DataFrame:

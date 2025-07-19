@@ -2,7 +2,6 @@ import pandas as pd
 from util.geo_utils import haversine
 from repository.feature_repository import filter_non_weather_features
 from service.weather_service import get_weather_data
-from service.prepare_input import prepare_ast_input
 from service.ai_service import send_to_ai_model
 import asyncio  #  추가
 import os  # 추가
@@ -12,8 +11,6 @@ from service.farsite_service import (
     prepare_ast_input,
     load_correction_weights
 )
-from service.ai_service import send_to_ai_model
-import traceback
 
 def load_grids_within_radius(user_lat, user_lon, radius_km=15):
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -76,9 +73,6 @@ async def process_prediction(lat: float, lon: float):
         weights = load_correction_weights()
         df_corrected = apply_directional_correction(df_probs, weights)
         print("✅ 확산 확률 계산 완료")
-
-        # ✅ 테스트용 격자 수 줄이기 (메모리 초과 방지)
-        df_corrected = df_corrected.head(5)
 
         # 5️⃣ AI 예측 전송
         print("📍 [STEP 5] AI 예측 JSON 구성 시작")
