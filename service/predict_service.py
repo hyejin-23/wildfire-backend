@@ -13,6 +13,7 @@ from service.farsite_service import (
     load_correction_weights
 )
 from service.ai_service import send_to_ai_model
+import traceback
 
 def load_grids_within_radius(user_lat, user_lon, radius_km=15):
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -95,7 +96,9 @@ async def process_prediction(lat: float, lon: float):
 
     except Exception as e:
         print(f"전체 흐름 중 예외 발생: {e}")
+        traceback.print_exc()  # ← 이거 추가!
         return {"error": str(e)}
+
 
 
 
