@@ -1,3 +1,5 @@
+import numpy as np
+
 def prepare_ast_input(df):
     """
     FARSITE 확산 모델의 평균 확률 컬럼을 계산하여 JSON 리스트 생성
@@ -7,4 +9,13 @@ def prepare_ast_input(df):
     df["farsite_prob"] = df[direction_cols].mean(axis=1)
 
     final = df.drop(columns=direction_cols)
+
+    # 🔧 numpy 타입을 Python 기본 타입으로 변환
+    final = final.applymap(lambda x:
+                           int(x) if isinstance(x, (np.int64, np.int32))
+                           else float(x) if isinstance(x, (np.float64, np.float32))
+                           else x
+                           )
+
+
     return final.to_dict(orient="records")
