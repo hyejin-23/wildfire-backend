@@ -3,6 +3,7 @@ from dto.predict_dto import PredictRequest
 from service.predict_service import process_prediction
 
 async def predict_fire(req):
+    print(f"🔥 predict_fire 함수 호출됨: lat={req.lat}, lon={req.lon}")
     try:
         print("✅ [predict_controller] 요청 도착!")
         result = await process_prediction(req.lat, req.lon)

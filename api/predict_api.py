@@ -5,10 +5,14 @@ from controller.predict_controller import predict_fire
 router = APIRouter()
 
 @router.post("/input")
-async def predict_endpoint(req: PredictRequest = Body(...)):  # ✅ async로 변경
+async def predict_endpoint(req: PredictRequest = Body(...)):
     print("✅ /input 엔드포인트 호출됨")
-    print(f"   ↳ 받은 값 lat: {req.lat}, lon: {req.lon}")  # ← 추가 추천!
-    return await predict_fire(req)  # ✅ await 사용
+    try:
+        return await predict_fire(req)
+    except Exception as e:
+        print(f"❌ 예측 처리 중 에러 발생: {e}")
+        return {"error": str(e)}
+
 
 @router.get("/")
 def root():

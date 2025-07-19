@@ -21,6 +21,7 @@ def load_grids_within_radius(user_lat, user_lon, radius_km=15):
     csv_path = os.path.join(DATA_DIR, 'korea_grids_0.01deg.csv')
 
     df = pd.read_csv(csv_path)
+    df = df.head(5)  # 🔥 메모리 초과 방지용 테스트 제한
     filtered = []
 
     for _, row in df.iterrows():

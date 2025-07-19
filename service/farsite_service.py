@@ -54,6 +54,7 @@ def load_correction_weights(csv_path: str) -> dict:
     base_dir = os.path.dirname(os.path.abspath(__file__))
     data_path = os.path.join(base_dir, '..', 'data', 'input_data_farsite_Nan.csv')
     df = pd.read_csv(data_path)
+    df = df.head(5)  # ✅ 테스트 중 Render 메모리 초과 방지용
 
     dir_cols = ['P_NW', 'P_N', 'P_NE', 'P_W', 'P_E', 'P_SW', 'P_S', 'P_SE']
     mean_probs = []
