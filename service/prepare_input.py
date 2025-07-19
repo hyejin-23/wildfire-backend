@@ -17,5 +17,7 @@ def prepare_ast_input(df):
                            else x
                            )
 
+    # ✅ NaN → None 으로 바꾸기 (JSON 직렬화 가능하도록)
+    final = final.replace({np.nan: None})
 
     return final.to_dict(orient="records")
