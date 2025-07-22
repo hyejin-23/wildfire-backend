@@ -12,7 +12,7 @@ def load_grids_within_radius(lat, lon, radius_km=15):
 
         df = pd.read_csv(file_path)
         # df = df.head(5)  # ✅ 테스트 중 Render 메모리 초과 방지용
-        print(f"✅ 격자 수 5개: {len(df)}")
+        print(f"✅ 격자 수 : {len(df)}")
 
         filtered = []
         for _, row in df.iterrows():
