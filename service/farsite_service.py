@@ -59,7 +59,7 @@ def load_correction_weights() -> dict:
 
     # CSV 읽기
     df = pd.read_csv(data_path)
-    df = df.head(5)  # ✅ Render 메모리 초과 방지 (테스트용)
+    # df = df.head(5)  # ✅ Render 메모리 초과 방지 (테스트용)
 
     # 방향별 확산 확률 컬럼
     dir_cols = ['P_NW', 'P_N', 'P_NE', 'P_W', 'P_E', 'P_SW', 'P_S', 'P_SE']
