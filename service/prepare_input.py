@@ -25,31 +25,26 @@
 import numpy as np
 import pandas as pd
 import math
-
-def sanitize_json(obj):
-    if isinstance(obj, float) and (math.isnan(obj) or math.isinf(obj)):
-        return None
-    elif isinstance(obj, dict):
-        return {k: sanitize_json(v) for k, v in obj.items()}
-    elif isinstance(obj, list):
-        return [sanitize_json(item) for item in obj]
-    else:
-        return obj
+from util.json_utils import sanitize_json
 
 def prepare_ast_input(df):
     """
-    FARSITE 확산 모델의 평균 확률 컬럼을 계산하여 JSON 리스트 생성
+    FARSITE 확산 모델의 평균 확산 확률을 계산하고, AI 예측에 적합한 JSON 리스트로 변환합니다.
+    1. 8방향 확산 확률의 평균값(farsite_prob) 계산
+    2. 이상치 및 NaN 제거
+    3. numpy 타입 → 기본 파이썬 타입 변환
+    4. JSON 직렬화 가능한 안전한 딕셔너리 리스트 반환
     """
     direction_cols = ["P_NW", "P_N", "P_NE", "P_W", "P_E", "P_SW", "P_S", "P_SE"]
     df = df.copy()
 
-    # ✅ 1. 평균 계산 (skipna=True 추가)
+    # ✅ 1. 8방향 확산 확률 평균 계산
     df["farsite_prob"] = df[direction_cols].mean(axis=1, skipna=True)
 
-    # ✅ 2. 8방향 확률 제거
+    # ✅ 2. 8방향 컬럼 제거 (AI 모델은 평균값만 받음)
     final = df.drop(columns=direction_cols)
 
-    # ✅ 3. 타입 변환 및 NaN, 이상치 처리
+    # ✅ 3. 타입 변환 + 이상치/NaN 처리
     final = final.applymap(lambda x:
         None if pd.isna(x) or x in [-9999, -9999.0]
         else int(x) if isinstance(x, (np.integer, int))
@@ -57,7 +52,7 @@ def prepare_ast_input(df):
         else x
     )
 
-    # ✅ 4. dict 변환 후 JSON 직렬화 안전하게 sanitize
+    # ✅ 4. JSON 직렬화 안전 처리
     return sanitize_json(final.to_dict(orient="records"))
 
 

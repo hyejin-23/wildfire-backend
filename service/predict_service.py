@@ -89,10 +89,13 @@ async def process_prediction(lat: float, lon: float):
 
         # 5️⃣ AI 예측 전송
         print("📍 [STEP 5] AI 예측 JSON 구성 시작")
-        final_json = prepare_ast_input(df_corrected)  # 🔹 내부에서 sanitize_json 적용됨
+        final_json = prepare_ast_input(df_corrected)  # ✅ 내부에서 sanitize_json 적용됨
         print("📦 전송 JSON 일부:", list(final_json[:1]))
 
-        # ✅ NaN → None 처리 및 numpy 타입 변환 (항상)
+        # 🔒 방어선: 혹시 모를 NaN/inf 유입 방지 (이중 방어)
+        final_json = sanitize_json(final_json)
+
+        # ✅ 샘플 데이터도 sanitize 완료된 final_json에서 추출
         sample_data = final_json[:2]
 
         try:
@@ -103,17 +106,18 @@ async def process_prediction(lat: float, lon: float):
             print(f"❌ AI 전송 중 예외 발생: {send_err}")
 
         # 🟢 정상/예외 상관없이 결과 반환
-        return sanitize_json({
+        return {
             "입력 위도": lat,
             "입력 경도": lon,
             "격자 수": len(df_corrected),
             "지표 + 날씨 샘플": sample_data
-        })
+        }
 
     except Exception as e:
         print(f"❗ 전체 흐름 중 예외 발생: {e}")
         traceback.print_exc()
         return {"error": str(e)}
+
 
 
 
