@@ -98,10 +98,8 @@ async def process_prediction(lat: float, lon: float):
 
         # 5️⃣ AI 예측 전송
         print("📍 [STEP 5] AI 예측 JSON 구성 시작")
-        # ✅ NaN, inf, np.nan → 모두 None 처리
-        final_json = prepare_ast_input(df_corrected)
-        final_json = sanitize_json(final_json)
-        print("📦 전송 JSON 일부:", list(final_json[:1]))  # ✅ 전송 데이터 미리보기
+        final_json = prepare_ast_input(df_corrected)  # 🔹 내부에서 sanitize_json 적용됨
+        print("📦 전송 JSON 일부:", list(final_json[:1]))
 
         # ✅ NaN → None 처리 및 numpy 타입 변환 (항상)
         sample_data = prepare_ast_input(df_corrected[:2])

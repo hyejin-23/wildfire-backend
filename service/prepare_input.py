@@ -23,8 +23,18 @@
 #     return final.to_dict(orient="records")
 
 import numpy as np
-import pandas as pd  # 혹시 없으면 추가
+import pandas as pd
+import math
 
+def sanitize_json(obj):
+    if isinstance(obj, float) and (math.isnan(obj) or math.isinf(obj)):
+        return None
+    elif isinstance(obj, dict):
+        return {k: sanitize_json(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [sanitize_json(item) for item in obj]
+    else:
+        return obj
 
 def prepare_ast_input(df):
     """
@@ -33,22 +43,21 @@ def prepare_ast_input(df):
     direction_cols = ["P_NW", "P_N", "P_NE", "P_W", "P_E", "P_SW", "P_S", "P_SE"]
     df = df.copy()
 
-    # 🔹 1. farsite_prob 평균 계산
-    df["farsite_prob"] = df[direction_cols].mean(axis=1)
+    # ✅ 1. 평균 계산 (skipna=True 추가)
+    df["farsite_prob"] = df[direction_cols].mean(axis=1, skipna=True)
 
-    # 🔹 2. 확산 확률 8방향 컬럼 제거
+    # ✅ 2. 8방향 확률 제거
     final = df.drop(columns=direction_cols)
 
-    # 🔹 3. numpy → Python 기본 타입으로 변환 + NaN, 이상치 처리
+    # ✅ 3. 타입 변환 및 NaN, 이상치 처리
     final = final.applymap(lambda x:
-                           None if pd.isna(x) or x in [-9999, -9999.0]  # ✅ NaN 또는 이상치 처리
-                           else int(x) if isinstance(x, (np.integer, int))
-                           else float(x) if isinstance(x, (np.floating, float))
-                           else x
-                           )
+        None if pd.isna(x) or x in [-9999, -9999.0]
+        else int(x) if isinstance(x, (np.integer, int))
+        else float(x) if isinstance(x, (np.floating, float))
+        else x
+    )
 
-    # 🔹 4. 혹시 남아있는 np.nan을 None으로
-    final = final.replace({np.nan: None})
+    # ✅ 4. dict 변환 후 JSON 직렬화 안전하게 sanitize
+    return sanitize_json(final.to_dict(orient="records"))
 
-    return final.to_dict(orient="records")
 
