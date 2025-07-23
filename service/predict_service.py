@@ -9,21 +9,12 @@ from repository.feature_repository import filter_non_weather_features
 from service.weather_service import get_weather_data
 import asyncio
 import os
+from util.json_utils import sanitize_json
 from service.farsite_service import (
     calculate_farsite_probs,
     apply_directional_correction,
     load_correction_weights, prepare_ast_input
 )
-
-def sanitize_json(obj):
-    if isinstance(obj, float) and (math.isnan(obj) or math.isinf(obj)):
-        return None
-    elif isinstance(obj, dict):
-        return {k: sanitize_json(v) for k, v in obj.items()}
-    elif isinstance(obj, list):
-        return [sanitize_json(item) for item in obj]
-    else:
-        return obj
 
 def load_grids_within_radius(user_lat, user_lon, radius_km=15):
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -102,7 +93,7 @@ async def process_prediction(lat: float, lon: float):
         print("📦 전송 JSON 일부:", list(final_json[:1]))
 
         # ✅ NaN → None 처리 및 numpy 타입 변환 (항상)
-        sample_data = prepare_ast_input(df_corrected[:2])
+        sample_data = final_json[:2]
 
         try:
             print("📡 AI 전송 시도 중...")
@@ -112,13 +103,12 @@ async def process_prediction(lat: float, lon: float):
             print(f"❌ AI 전송 중 예외 발생: {send_err}")
 
         # 🟢 정상/예외 상관없이 결과 반환
-        return {
+        return sanitize_json({
             "입력 위도": lat,
             "입력 경도": lon,
             "격자 수": len(df_corrected),
             "지표 + 날씨 샘플": sample_data
-        }
-
+        })
 
     except Exception as e:
         print(f"❗ 전체 흐름 중 예외 발생: {e}")

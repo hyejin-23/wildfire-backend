@@ -10,8 +10,8 @@ async def get_weather_data(lat: float, lon: float):
     위도, 경도를 받아 Open-Meteo API에서 실시간 날씨 5종 데이터 가져오기 (비동기 버전)
     반환: 딕셔너리(temp_C, wind_speed, wind_deg, humidity, precip_mm)
     """
-    # 캐시 키 생성 (소수점 3자리까지 반올림 → 중복 방지)
-    key = f"{round(lat, 3)}_{round(lon, 3)}"
+    # 캐시 키 생성 (소수점 2자리까지 반올림 → 중복 방지)
+    key = f"{round(lat, 2)}_{round(lon, 2)}"
     if key in weather_cache:
         return weather_cache[key]  # 캐시된 결과 반환
 
@@ -26,7 +26,7 @@ async def get_weather_data(lat: float, lon: float):
     try:
         async with httpx.AsyncClient() as client:
             response = await client.get(url)
-            await asyncio.sleep(1)  # 호출 간 1초 지연 → 429 방지
+            await asyncio.sleep(2)  # 호출 간 2초 지연 → 429 방지
             response.raise_for_status()
             data = response.json()
 
