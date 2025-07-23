@@ -20,6 +20,11 @@ def calculate_farsite_probs(df: pd.DataFrame) -> pd.DataFrame:
     result_rows = []
 
     for _, row in df.iterrows():
+        # ✅ NaN/None 처리: wind_deg, avg_fuelload_pertree_kg 가 없으면 해당 row는 패스
+        if pd.isna(row["wind_deg"]) or pd.isna(row["avg_fuelload_pertree_kg"]):
+            print(f"⚠️ 확산 확률 계산 건너뜀: wind_deg={row['wind_deg']}, fuel={row['avg_fuelload_pertree_kg']}")
+            continue
+
         wind_dir = row["wind_deg"]
         ros = 0.001 * row["avg_fuelload_pertree_kg"]
 
@@ -45,6 +50,11 @@ def calculate_farsite_probs(df: pd.DataFrame) -> pd.DataFrame:
         for label, p in zip(dir_labels, P):
             new_row[label] = p
         result_rows.append(new_row)
+
+    # ✅ 빈 result 방지: 하나도 계산되지 않으면 빈 DataFrame
+    if not result_rows:
+        print("❗ 모든 격자에서 확산 확률 계산 실패")
+        return pd.DataFrame(columns=df.columns.tolist() + dir_labels)
 
     return pd.DataFrame(result_rows)
 
