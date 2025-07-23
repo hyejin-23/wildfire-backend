@@ -1,6 +1,7 @@
 import pandas as pd
 import traceback
 import numpy as np
+import math
 
 from service.ai_service import send_to_ai_model
 from util.geo_utils import haversine
@@ -13,6 +14,16 @@ from service.farsite_service import (
     apply_directional_correction,
     load_correction_weights, prepare_ast_input
 )
+
+def sanitize_json(obj):
+    if isinstance(obj, float) and (math.isnan(obj) or math.isinf(obj)):
+        return None
+    elif isinstance(obj, dict):
+        return {k: sanitize_json(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [sanitize_json(item) for item in obj]
+    else:
+        return obj
 
 def load_grids_within_radius(user_lat, user_lon, radius_km=15):
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -79,15 +90,13 @@ async def process_prediction(lat: float, lon: float):
 
         # 5️⃣ AI 예측 전송
         print("📍 [STEP 5] AI 예측 JSON 구성 시작")
+        # ✅ NaN, inf, np.nan → 모두 None 처리
         final_json = prepare_ast_input(df_corrected)
+        final_json = sanitize_json(final_json)
         print("📦 전송 JSON 일부:", list(final_json[:1]))  # ✅ 전송 데이터 미리보기
 
         # ✅ NaN → None 처리 및 numpy 타입 변환 (항상)
-        sample_data = df_corrected.head(2).replace({np.nan: None}).applymap(
-            lambda x: int(x) if isinstance(x, (np.int32, np.int64))
-            else float(x) if isinstance(x, (np.float32, np.float64))
-            else x
-        ).to_dict(orient="records")
+        sample_data = prepare_ast_input(df_corrected[:2])
 
         try:
             print("📡 AI 전송 시도 중...")
