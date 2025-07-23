@@ -34,15 +34,16 @@ def load_grids_within_radius(user_lat, user_lon, radius_km=15):
     return pd.DataFrame(filtered)
 
 
-# ✅ 날씨 비동기 처리 함수
+# ✅ 날씨 순차 호출 방식
 async def append_weather_to_grids_async(grids_df: pd.DataFrame):
-    tasks = [
-        get_weather_data(row["center_lat"], row["center_lon"])
-        for _, row in grids_df.iterrows()
-    ]
-    weather_data = await asyncio.gather(*tasks)
+    weather_data = []
+    for _, row in grids_df.iterrows():
+        weather = await get_weather_data(row["center_lat"], row["center_lon"])
+        weather_data.append(weather)
+        await asyncio.sleep(1)  # ✅ 명확한 간격 적용
     weather_df = pd.DataFrame(weather_data)
     return pd.concat([grids_df.reset_index(drop=True), weather_df], axis=1)
+
 
 
 async def process_prediction(lat: float, lon: float):
