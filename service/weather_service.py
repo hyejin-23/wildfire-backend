@@ -42,6 +42,10 @@ async def get_weather_data(lat: float, lon: float):
         now = datetime.now().strftime("%Y-%m-%dT%H:00")
 
         if "hourly" in data:
+            # ✅ [여기] 시간 비교 전 로그 추가
+            print("📆 hourly['time'][0] =", data["hourly"]["time"][0])
+            print("🕒 현재 한국시간 =", datetime.now().strftime("%Y-%m-%dT%H:00"))
+
             times = data["hourly"]["time"]
             if now in times:
                 idx = times.index(now)
