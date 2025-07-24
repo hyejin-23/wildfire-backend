@@ -6,23 +6,26 @@ import os
 def calculate_farsite_probs(df: pd.DataFrame) -> pd.DataFrame:
     """
     격자별로 8방향(NW~SE)에 대한 확산 확률(P_dir)을 계산하여 DataFrame에 추가.
+    누락 데이터가 있는 경우 확산 확률은 None으로 처리하되 원본 행은 유지.
     """
-    # 🔹 8방향 설정
     directions = [(-1, 1), (0, 1), (1, 1), (-1, 0), (1, 0), (-1, -1), (0, -1), (1, -1)]
     dir_labels = ['P_NW', 'P_N', 'P_NE', 'P_W', 'P_E', 'P_SW', 'P_S', 'P_SE']
 
-    # 🔹 고정 파라미터
     sigma = 1.0
     alpha = 0.5
     beta = 0.5
-    slope_dir = 135  # 경사 방향 (예시값)
+    slope_dir = 135
 
     result_rows = []
 
     for _, row in df.iterrows():
-        # ✅ NaN/None 처리: wind_deg, avg_fuelload_pertree_kg 가 없으면 해당 row는 패스
+        new_row = row.copy()
+
         if pd.isna(row["wind_deg"]) or pd.isna(row["avg_fuelload_pertree_kg"]):
-            print(f"⚠️ 확산 확률 계산 건너뜀: wind_deg={row['wind_deg']}, fuel={row['avg_fuelload_pertree_kg']}")
+            print(f"⚠️ 확산 확률 계산 누락: wind_deg={row['wind_deg']}, fuel={row['avg_fuelload_pertree_kg']}")
+            for label in dir_labels:
+                new_row[label] = None
+            result_rows.append(new_row)
             continue
 
         wind_dir = row["wind_deg"]
@@ -42,21 +45,17 @@ def calculate_farsite_probs(df: pd.DataFrame) -> pd.DataFrame:
         P = np.array(P)
         total = P.sum()
         if total == 0 or np.isnan(total):
-            P = np.zeros_like(P)  # 🔧 확산이 불가능한 경우, 0으로 처리
+            P = np.zeros_like(P)
         else:
-            P = P / total  # ✅ 정규화
+            P = P / total
 
-        new_row = row.copy()
         for label, p in zip(dir_labels, P):
             new_row[label] = p
+
         result_rows.append(new_row)
 
-    # ✅ 빈 result 방지: 하나도 계산되지 않으면 빈 DataFrame
-    if not result_rows:
-        print("❗ 모든 격자에서 확산 확률 계산 실패")
-        return pd.DataFrame(columns=df.columns.tolist() + dir_labels)
-
     return pd.DataFrame(result_rows)
+
 
 
 def load_correction_weights() -> dict:
