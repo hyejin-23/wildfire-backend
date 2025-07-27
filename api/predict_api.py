@@ -30,7 +30,7 @@ router = APIRouter()
 
 @router.post("/input")
 async def predict_endpoint(request: Request):
-    print("✅ /input 엔드포인트 호출됨")
+    print("✅ /input 엔드포인트 호출됨", flush=True)
     try:
         data = await request.json()
         lat = data.get('lat')
