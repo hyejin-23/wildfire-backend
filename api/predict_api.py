@@ -11,6 +11,7 @@ async def predict_endpoint(req: PredictRequest = Body(...)):
     print("✅ /input 엔드포인트 호출됨")
     try:
         result = await predict_fire(req)
+        print("프론트에서 받은 값:", result)
 
         # ✅ NaN/inf 처리
         sanitized = sanitize_json(result)
