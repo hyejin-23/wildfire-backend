@@ -30,15 +30,19 @@ router = APIRouter()
 
 @router.post("/input")
 async def predict_endpoint(request: Request):
-    print("✅ /input 엔드포인트 호출됨", flush=True)
+    import sys
+    print("✅ /input 엔드포인트 호출됨", file=sys.stdout, flush=True)
     try:
         data = await request.json()
+        print("📥 전체 요청 JSON:", data)
         lat = data.get('lat')
         lon = data.get('lon')
         print("👉 프론트에서 받은 값:", lat, lon)
 
-        # Pydantic 객체로 변환
-        req_obj = PredictRequest(lat=lat, lon=lon)  # ⚠️ 필요한 필드 추가
+        if lat is None or lon is None:
+            return {"error": "lat 또는 lon 값이 누락되었습니다."}
+
+        req_obj = PredictRequest(lat=lat, lon=lon)
         result = await predict_fire(req_obj)
         print("🔥 예측 결과:", result)
 
@@ -48,6 +52,7 @@ async def predict_endpoint(request: Request):
     except Exception as e:
         print(f"❌ 예측 처리 중 에러 발생: {e}")
         return {"error": str(e)}
+
 
 @router.get("/")
 def root():
