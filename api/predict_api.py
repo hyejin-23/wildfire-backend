@@ -21,9 +21,10 @@ from util.json_utils import sanitize_json # 혹은 farsite_service에서 직접
 #         print(f"❌ 예측 처리 중 에러 발생: {e}")
 #         return {"error": str(e)}
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
+from dto.predict_dto import PredictRequest
 from controller.predict_controller import predict_fire
-from fastapi import Request
+from util.json_utils import sanitize_json
 
 router = APIRouter()
 
@@ -36,11 +37,13 @@ async def predict_endpoint(request: Request):
         lon = data.get('lon')
         print("👉 프론트에서 받은 값:", lat, lon)
 
-        # ✅ 여기서 기존 로직 호출
-        result = await predict_fire(lat, lon)  # predict_fire를 lat/lon 받도록 수정하거나 wrapper 함수 작성
+        # Pydantic 객체로 변환
+        req_obj = PredictRequest(lat=lat, lon=lon)  # ⚠️ 필요한 필드 추가
+        result = await predict_fire(req_obj)
         print("🔥 예측 결과:", result)
 
-        return result
+        sanitized = sanitize_json(result)
+        return sanitized
 
     except Exception as e:
         print(f"❌ 예측 처리 중 에러 발생: {e}")
