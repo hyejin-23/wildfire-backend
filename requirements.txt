@@ -5,3 +5,5 @@ requests
 aiohttp
 numpy
 httpx
+google-cloud-firestore
+

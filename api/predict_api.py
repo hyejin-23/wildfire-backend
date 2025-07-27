@@ -26,15 +26,25 @@ from dto.predict_dto import PredictRequest
 from controller.predict_controller import predict_fire
 from util.json_utils import sanitize_json
 
+import os, json, tempfile
+from google.cloud import firestore
+
+# ✅ Firebase 인증 키 환경변수 처리
+if "GOOGLE_APPLICATION_CREDENTIALS_JSON" in os.environ:
+    key_dict = json.loads(os.environ["GOOGLE_APPLICATION_CREDENTIALS_JSON"])
+    temp_path = tempfile.NamedTemporaryFile(delete=False, suffix=".json").name
+    with open(temp_path, "w") as f:
+        json.dump(key_dict, f)
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = temp_path
+
 router = APIRouter()
 
+# ✅ 기존 방식: 프론트가 직접 위도/경도 보내는 방식 유지
 @router.post("/input")
 async def predict_endpoint(request: Request):
-    import sys
-    print("✅ /input 엔드포인트 호출됨", file=sys.stdout, flush=True)
+    print("✅ /input 엔드포인트 호출됨")
     try:
         data = await request.json()
-        print("📥 전체 요청 JSON:", data)
         lat = data.get('lat')
         lon = data.get('lon')
         print("👉 프론트에서 받은 값:", lat, lon)
@@ -44,19 +54,45 @@ async def predict_endpoint(request: Request):
 
         req_obj = PredictRequest(lat=lat, lon=lon)
         result = await predict_fire(req_obj)
-        print("🔥 예측 결과:", result)
-
-        sanitized = sanitize_json(result)
-        return sanitized
+        return sanitize_json(result)
 
     except Exception as e:
         print(f"❌ 예측 처리 중 에러 발생: {e}")
         return {"error": str(e)}
 
 
+# ✅ 새로운 방식: Firebase에서 최근 위치 가져오는 엔드포인트 추가
+@router.get("/firebase-input")
+async def predict_from_firebase():
+    try:
+        db = firestore.Client()
+
+        docs = db.collection("fire_locations")\
+            .order_by("timestamp", direction=firestore.Query.DESCENDING)\
+            .limit(1).stream()
+        doc = next(docs, None)
+
+        if not doc:
+            return {"error": "Firebase에 저장된 위치 정보가 없습니다."}
+
+        data = doc.to_dict()
+        lat = data.get("lat")
+        lon = data.get("lon")
+
+        print(f"📡 Firestore에서 가져온 위치: {lat}, {lon}")
+
+        req_obj = PredictRequest(lat=lat, lon=lon)
+        result = await predict_fire(req_obj)
+        return sanitize_json(result)
+
+    except Exception as e:
+        print("❌ Firebase 예측 처리 중 오류:", e)
+        return {"error": str(e)}
+
 @router.get("/")
 def root():
     return {"message": "Wildfire backend is running"}
+
 
 
 
