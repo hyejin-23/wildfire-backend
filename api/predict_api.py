@@ -34,18 +34,22 @@ async def predict_endpoint(request: Request):
         lon = data.get('lon')
         print("👉 프론트에서 받은 값:", lat, lon)
 
-        # 🔧 여기선 무거운 predict_fire 대신 간단한 결과 반환
+        # ✅ 무거운 처리 생략한 간단 응답
         result = {
             "lat": lat,
             "lon": lon,
             "status": "ok"
         }
+        return result  # ✅ 이 줄이 꼭 필요합니다
 
-
+    except Exception as e:
+        print(f"❌ 예측 처리 중 에러 발생: {e}")
+        return {"error": str(e)}
 
 @router.get("/")
 def root():
     return {"message": "Wildfire backend is running"}
+
 
 
 
