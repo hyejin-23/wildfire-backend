@@ -16,7 +16,7 @@ from service.farsite_service import (
     load_correction_weights, prepare_ast_input
 )
 
-def load_grids_within_radius(user_lat, user_lon, radius_km=5):
+def load_grids_within_radius(user_lat, user_lon, radius_km=15):
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     DATA_DIR = os.path.join(BASE_DIR, '..', 'data')
     csv_path = os.path.join(DATA_DIR, 'korea_grids_0.01deg.csv')

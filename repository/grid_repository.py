@@ -2,7 +2,7 @@ import pandas as pd
 import os
 from util.geo_utils import haversine
 
-def load_grids_within_radius(lat, lon, radius_km=5):
+def load_grids_within_radius(lat, lon, radius_km=15):
     try:
         BASE_DIR = os.path.dirname(os.path.abspath(__file__))
         DATA_DIR = os.path.join(BASE_DIR, '..', 'data')
