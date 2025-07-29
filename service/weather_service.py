@@ -15,6 +15,7 @@ async def get_weather_data(lat: float, lon: float):
     if key in weather_cache:
         return weather_cache[key]  # 캐시된 결과 반환
 
+    # API URL 구성
     url = (
         "https://api.open-meteo.com/v1/forecast"
         f"?latitude={lat}&longitude={lon}"
@@ -36,16 +37,12 @@ async def get_weather_data(lat: float, lon: float):
         wind_speed = current.get("windspeed")
         wind_deg = current.get("winddirection")
 
-        # 현재 시간 기준으로 가장 가까운 시간의 시간별 데이터
+        # 현재 시간과 일치하는 hourly 데이터 추출
         humidity = None
         precip_mm = None
         now = datetime.now().strftime("%Y-%m-%dT%H:00")
 
         if "hourly" in data:
-            # # ✅ [여기] 시간 비교 전 로그 추가
-            # print("📆 hourly['time'][0] =", data["hourly"]["time"][0])
-            # print("🕒 현재 한국시간 =", datetime.now().strftime("%Y-%m-%dT%H:00"))
-
             times = data["hourly"]["time"]
             if now in times:
                 idx = times.index(now)

@@ -1,5 +1,6 @@
 import math
 
+# JSON 직렬화 안전성 확보용 유틸
 def sanitize_json(obj):
     if isinstance(obj, float) and (math.isnan(obj) or math.isinf(obj)):
         return None

@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import os
 
-
+# 1. 격자별 8방향 확산 확률 계산
 def calculate_farsite_probs(df: pd.DataFrame) -> pd.DataFrame:
     """
     격자별로 8방향(NW~SE)에 대한 확산 확률(P_dir)을 계산하여 DataFrame에 추가.
@@ -57,7 +57,7 @@ def calculate_farsite_probs(df: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(result_rows)
 
 
-
+# 2. 평균 확산 확률 기반 가중치 불러오기
 def load_correction_weights() -> dict:
     """
     input_data_farsite_Nan.csv에서 방향별 확산 확률 평균을 기반으로 역가중치 계산
@@ -69,7 +69,6 @@ def load_correction_weights() -> dict:
 
     # 🔹 CSV 읽기
     df = pd.read_csv(data_path)
-    # df = df.head(5)  # ✅ Render 메모리 초과 방지 (테스트용)
 
     # 🔹 방향별 확산 확률 컬럼
     dir_cols = ['P_NW', 'P_N', 'P_NE', 'P_W', 'P_E', 'P_SW', 'P_S', 'P_SE']
@@ -87,7 +86,7 @@ def load_correction_weights() -> dict:
     # 🔹 결과 반환
     return {dir_cols[i]: norm_weights[i] for i in range(8)}
 
-
+# 3. 확산 확률에 보정 가중치 적용
 def apply_directional_correction(df_probs: pd.DataFrame, weights: dict) -> pd.DataFrame:
     """
     보정 가중치를 적용하여 P_dir 열들을 정규화된 확률로 다시 계산
@@ -105,7 +104,7 @@ def apply_directional_correction(df_probs: pd.DataFrame, weights: dict) -> pd.Da
         # 🔹 정규화
         total = np.nansum(probs)
         if total == 0 or np.isnan(total):
-            normalized = [0.0] * len(probs)  # 🔧 정규화 불가 시 0으로
+            normalized = [0.0] * len(probs)
         else:
             normalized = [p / total for p in probs]
 
@@ -114,7 +113,7 @@ def apply_directional_correction(df_probs: pd.DataFrame, weights: dict) -> pd.Da
 
     return df_corrected
 
-
+# 4. AI 예측용 JSON 변환
 def prepare_ast_input(df: pd.DataFrame) -> list[dict]:
     """
     보정된 확산 확률 DataFrame에서 필요한 21개 항목만 뽑아 JSON 리스트로 구성

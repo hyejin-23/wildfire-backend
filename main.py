@@ -4,12 +4,13 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
-# /input 엔드포인트 등록
+# API 라우터 등록 (프론트에서 /input 호출 시 연결)
 app.include_router(predict_router)
 
+# ORS 설정: 모든 출처 허용
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 또는 ["http://localhost:3000"] 등 프론트 주소 명시
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

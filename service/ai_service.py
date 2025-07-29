@@ -1,5 +1,6 @@
 import httpx
 
+# AI 예측 서버로 전송하는 함수
 async def send_to_ai_model(data: list):
     """
         21개 필드 JSON 리스트를 외부 AI 예측 서버로 비동기로 전송
@@ -16,10 +17,6 @@ async def send_to_ai_model(data: list):
     except httpx.RequestError as e:
         print(f"AI 예측 서버 전송 실패: {e}")
         return 502
-
-# async def send_to_ai_model(data):
-#     print("📤 [TEST] AI 서버 대신 가짜 응답 반환 중")
-#     return 200  # 테스트용으로 항상 성공 응답
 
 
 

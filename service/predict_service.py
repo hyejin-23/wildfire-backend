@@ -1,43 +1,23 @@
 import pandas as pd
 import traceback
 import numpy as np
-import math
-
-from service.ai_service import send_to_ai_model
-from util.geo_utils import haversine
-from repository.feature_repository import filter_non_weather_features
-from service.weather_service import get_weather_data
 import asyncio
 import os
+
+from service.ai_service import send_to_ai_model
+from repository.feature_repository import filter_non_weather_features
+from service.weather_service import get_weather_data
 from util.json_utils import sanitize_json
 from service.farsite_service import (
     calculate_farsite_probs,
     apply_directional_correction,
-    load_correction_weights, prepare_ast_input
+    load_correction_weights,
+    prepare_ast_input
 )
 
-def load_grids_within_radius(user_lat, user_lon, radius_km=10):
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    DATA_DIR = os.path.join(BASE_DIR, '..', 'data')
-    csv_path = os.path.join(DATA_DIR, 'korea_grids_0.01deg.csv')
-
-    df = pd.read_csv(csv_path)
-    # df = df.head(5)  # 🔥 메모리 초과 방지용 테스트 제한 → # TODO: 배포 시 제거
-    filtered = []
-
-    for _, row in df.iterrows():
-        grid_lat = row['center_lat']
-        grid_lon = row['center_lon']
-        distance = haversine(user_lat, user_lon, grid_lat, grid_lon)
-
-        if distance <= radius_km:
-            filtered.append(row)
-
-    return pd.DataFrame(filtered)
-
-
+# 날씨 API를 병렬 호출하여 모든 격자에 날씨 붙이기
 async def fetch_weather(lat, lon):
-    await asyncio.sleep(0.2)  # Render 또는 API 과부하 방지용 짧은 지연
+    await asyncio.sleep(0.2)
     return await get_weather_data(lat, lon)
 
 async def append_weather_to_grids_async(grids_df: pd.DataFrame):
@@ -55,7 +35,7 @@ async def append_weather_to_grids_async(grids_df: pd.DataFrame):
     return pd.concat([grids_df.reset_index(drop=True), weather_df], axis=1)
 
 
-
+# 전체 예측 흐름 제어 함수
 async def process_prediction(lat: float, lon: float):
     print(f"🔥 process_prediction 시작: 위도={lat}, 경도={lon}")
 
@@ -89,7 +69,7 @@ async def process_prediction(lat: float, lon: float):
 
         # 5️⃣ AI 예측 전송
         print("📍 [STEP 5] AI 예측 JSON 구성 시작")
-        final_json = prepare_ast_input(df_corrected)  # ✅ 내부에서 sanitize_json 적용됨
+        final_json = prepare_ast_input(df_corrected)  # 내부에서 sanitize_json 적용됨
         print("📦 전송 JSON 일부:", list(final_json[:1]))
 
         # 🔒 방어선: 혹시 모를 NaN/inf 유입 방지 (이중 방어)
